@@ -14,39 +14,7 @@ export default function DigiLockerConnect({ onSkip, onConnected }: Props) {
   const [loading, setLoading] = useState(false);
   const [connected, setConnected] = useState(false);
 
-  const handleConnect = async () => {
-    setLoading(true);
-    try {
-      const { auth_url } = await docsApi.getDigiLockerAuthUrl();
-      // Open in a popup
-      const popup = window.open(auth_url, "DigiLocker", "width=600,height=700");
-
-      // Listen for callback message from popup
-      const listener = (event: MessageEvent) => {
-        if (event.data?.type === "digilocker_connected") {
-          window.removeEventListener("message", listener);
-          popup?.close();
-          setConnected(true);
-          toast.success("DigiLocker connected! Documents imported.");
-          onConnected();
-        }
-      };
-      window.addEventListener("message", listener);
-
-      // Fallback: poll for popup close
-      const pollTimer = setInterval(() => {
-        if (popup?.closed) {
-          clearInterval(pollTimer);
-          window.removeEventListener("message", listener);
-          setLoading(false);
-        }
-      }, 1000);
-    } catch {
-      toast.error("Could not get DigiLocker auth URL");
-      setLoading(false);
-    }
-  };
-
+  
   if (connected) {
     return (
       <div className="text-center py-8">
@@ -86,7 +54,7 @@ export default function DigiLockerConnect({ onSkip, onConnected }: Props) {
       </div>
 
       <button
-        onClick={handleConnect}
+    
         disabled={loading}
         className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition"
       >
