@@ -29,7 +29,7 @@ export default function DashboardPage() {
   const [schemesLoading, setSchemesLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [refreshing,     setRefreshing]     = useState(false);
-  const [source,         setSource]         = useState<"vector" | "eligible" | "popular">("vector");
+  const [source,         setSource]         = useState<"vector" | "eligible" | "popular" | "profile_match">("popular");
   const [bgRefreshing,   setBgRefreshing]   = useState(false);
 
   useEffect(() => {
@@ -52,14 +52,14 @@ export default function DashboardPage() {
         schemesApi.recommend({ limit: 30 }),
         appsApi.getMyApplications(),
       ]);
+      const recType = (rec as any).recommendation_type as string;
       setRecommended(rec.schemes);
-      // Backend now returns "eligible" if user has LLM-verified cache, else "vector_similarity"
-      setSource((rec as any).recommendation_type === "eligible" ? "eligible" : "vector");
+      setSource(recType === "eligible" ? "eligible" : recType === "profile_match" ? "profile_match" : recType === "popular" ? "popular" : "vector");
       setRecentApps(apps.applications.slice(0, 3));
 
-      // If we only got vector/popular results AND the user has a complete profile,
-      // silently kick off a background eligibility refresh so next visit is better.
-      if ((rec as any).recommendation_type !== "eligible" && user?.profile_complete) {
+      // Silently trigger background LLM eligibility check when user has a
+      // profile but no cache yet — next visit will return verified results.
+      if (recType !== "eligible" && user?.profile_complete) {
         setBgRefreshing(true);
         schemesApi.refreshEligibility()
           .catch(() => {/* silent */})
@@ -165,7 +165,9 @@ export default function DashboardPage() {
                     ? "Finding personalised schemes for you…"
                     : source === "eligible"
                       ? `${recommended.length} AI-verified eligible schemes`
-                      : `${recommended.length} schemes matched · AI Recommendations`
+                      : source === "profile_match"
+                        ? `${recommended.length} schemes matched to your profile`
+                        : `${recommended.length} schemes`
                   }
                 </p>
               </div>
@@ -296,9 +298,11 @@ export default function DashboardPage() {
             <h2 className="font-display font-semibold text-on-surface flex items-center gap-2 text-lg">
               {source === "eligible"
                 ? <><CheckCircle2 size={16} className="text-secondary" />Eligible Schemes</>
-                : source === "popular"
-                  ? <><Sparkles size={16} className="text-secondary" />Popular Schemes</>
-                  : <><Sparkles size={16} className="text-secondary" />Recommended for You</>
+                : source === "profile_match"
+                  ? <><Sparkles size={16} className="text-secondary" />Matched to Your Profile</>
+                  : source === "popular"
+                    ? <><Sparkles size={16} className="text-secondary" />Popular Schemes</>
+                    : <><Sparkles size={16} className="text-secondary" />Recommended for You</>
               }
               {categoryFilter && (
                 <span className="text-secondary font-normal text-base">· {categoryFilter}</span>
