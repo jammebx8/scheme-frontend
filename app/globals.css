@@ -1,0 +1,142 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..800;1,14..32,300..800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
+
+/* ── design tokens ─────────────────────────────────────── */
+:root {
+  --primary:        #001428;
+  --primary-dim:    #0f2942;
+  --secondary:      #006a61;
+  --secondary-soft: #86f2e4;
+  --surface:        #f8f9ff;
+  --surface-low:    #eff4ff;
+  --surface-card:   #ffffff;
+  --border:         #c3c6ce;
+  --border-soft:    #e6eeff;
+  --on-surface:     #0d1c2e;
+  --on-surface-dim: #43474d;
+  --outline:        #74777e;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--surface);
+  color: var(--on-surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── scrollbar ─────────────────────────────────────────── */
+::-webkit-scrollbar          { width: 5px; height: 5px; }
+::-webkit-scrollbar-track    { background: var(--surface-low); }
+::-webkit-scrollbar-thumb    { background: #c3c6ce; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #74777e; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── shimmer skeleton ──────────────────────────────────── */
+.shimmer {
+  background: linear-gradient(90deg, #e6eeff 25%, #d5e3fc 50%, #e6eeff 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite;
+}
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── scheme card hover ─────────────────────────────────── */
+.scheme-card {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  will-change: transform;
+}
+.scheme-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px -6px rgba(0,20,40,0.14);
+}
+
+/* ── agent log entry ───────────────────────────────────── */
+.agent-step-enter {
+  animation: stepSlideIn 0.25s ease-out;
+}
+@keyframes stepSlideIn {
+  from { transform: translateX(-8px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+/* ── India tricolor bar ────────────────────────────────── */
+.tricolor-bar {
+  background: linear-gradient(to right, #FF9933 33.33%, #ffffff 33.33%, #ffffff 66.66%, #138808 66.66%);
+}
+
+/* ── focus ring ────────────────────────────────────────── */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-secondary/40 focus:ring-offset-1;
+}
+
+/* ── glass card ────────────────────────────────────────── */
+.glass {
+  background: rgba(255,255,255,0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ── surface elevation cards ───────────────────────────── */
+.card-surface {
+  background: #ffffff;
+  border: 1px solid #e6eeff;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px -4px rgba(0,20,40,0.06);
+}
+
+/* ── pill badge ────────────────────────────────────────── */
+.badge-primary {
+  @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  background: var(--primary);
+  color: #ffffff;
+}
+.badge-secondary {
+  @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  background: var(--secondary-soft);
+  color: #00201d;
+}
+
+/* ── form inputs ───────────────────────────────────────── */
+.form-input {
+  @apply w-full px-4 py-2.5 border border-outline-variant rounded-xl text-sm bg-surface-container-low;
+  @apply focus:bg-white focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary/50;
+  @apply transition placeholder:text-outline;
+  color: var(--on-surface);
+}
+
+/* ── button variants ───────────────────────────────────── */
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all;
+  @apply bg-primary text-on-primary hover:bg-primary-container;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply shadow-sm;
+}
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition-all;
+  @apply bg-secondary text-on-secondary hover:opacity-90;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+}
+.btn-ghost {
+  @apply inline-flex items-center justify-center gap-2 font-medium rounded-xl transition-all;
+  @apply bg-surface-container text-on-surface hover:bg-surface-container-high;
+}
+
+/* ── section header ────────────────────────────────────── */
+.section-label {
+  @apply text-xs font-bold uppercase tracking-widest text-on-surface-variant;
+}
