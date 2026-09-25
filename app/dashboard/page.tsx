@@ -29,7 +29,8 @@ export default function DashboardPage() {
   const [schemesLoading, setSchemesLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [refreshing,     setRefreshing]     = useState(false);
-  const [source,         setSource]         = useState<"vector" | "eligible">("vector");
+  const [source,         setSource]         = useState<"vector" | "eligible" | "popular">("vector");
+  const [bgRefreshing,   setBgRefreshing]   = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.push("/login");
@@ -52,8 +53,18 @@ export default function DashboardPage() {
         appsApi.getMyApplications(),
       ]);
       setRecommended(rec.schemes);
-      setSource("vector");
+      // Backend now returns "eligible" if user has LLM-verified cache, else "vector_similarity"
+      setSource((rec as any).recommendation_type === "eligible" ? "eligible" : "vector");
       setRecentApps(apps.applications.slice(0, 3));
+
+      // If we only got vector/popular results AND the user has a complete profile,
+      // silently kick off a background eligibility refresh so next visit is better.
+      if ((rec as any).recommendation_type !== "eligible" && user?.profile_complete) {
+        setBgRefreshing(true);
+        schemesApi.refreshEligibility()
+          .catch(() => {/* silent */})
+          .finally(() => setBgRefreshing(false));
+      }
     } catch {
       toast.error("Failed to load data");
     } finally {
@@ -136,6 +147,12 @@ export default function DashboardPage() {
                       <CheckCircle2 size={10} /> AI Verified
                     </span>
                   )}
+                  {bgRefreshing && source !== "eligible" && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 border border-white/15 text-xs font-medium text-white/50">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      Building eligibility…
+                    </span>
+                  )}
                 </div>
                 <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight leading-tight">
                   Welcome back,{" "}
@@ -146,7 +163,10 @@ export default function DashboardPage() {
                 <p className="text-white/55 text-sm mt-1.5 leading-snug">
                   {schemesLoading
                     ? "Finding personalised schemes for you…"
-                    : `${recommended.length} schemes matched · ${source === "vector" ? "AI Recommendations" : "Eligibility Verified"}`}
+                    : source === "eligible"
+                      ? `${recommended.length} AI-verified eligible schemes`
+                      : `${recommended.length} schemes matched · AI Recommendations`
+                  }
                 </p>
               </div>
 
@@ -274,9 +294,11 @@ export default function DashboardPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-display font-semibold text-on-surface flex items-center gap-2 text-lg">
-              {source === "vector"
-                ? <><Sparkles size={16} className="text-secondary" />Recommended for You</>
-                : <><CheckCircle2 size={16} className="text-secondary" />Eligible Schemes</>
+              {source === "eligible"
+                ? <><CheckCircle2 size={16} className="text-secondary" />Eligible Schemes</>
+                : source === "popular"
+                  ? <><Sparkles size={16} className="text-secondary" />Popular Schemes</>
+                  : <><Sparkles size={16} className="text-secondary" />Recommended for You</>
               }
               {categoryFilter && (
                 <span className="text-secondary font-normal text-base">· {categoryFilter}</span>

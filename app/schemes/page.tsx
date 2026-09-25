@@ -14,10 +14,23 @@ import {
 import { cn } from "@/lib/utils";
 
 const LEVELS    = ["Central", "State", "State-Central"];
-const PAGE_SIZE = 18; // 3 cols × 6 rows — looks full on desktop
+const PAGE_SIZE = 18;
 type  Mode      = "browse" | "vector";
 
-// Build a compact page-number list with ellipsis
+// Suggestions that cycle in the search placeholder
+const SEARCH_SUGGESTIONS = [
+  "Search schemes with AI…",
+  "Schemes for single child families…",
+  "Schemes for widows & destitute women…",
+  "Scholarships for girl students…",
+  "Farming loans in Rajasthan…",
+  "Housing scheme for BPL families…",
+  "Pension for senior citizens…",
+  "Health insurance for labourers…",
+  "Startup funding for youth…",
+  "Skill development for SC/ST youth…",
+];
+
 function buildPageList(current: number, total: number): (number | "…")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
   const pages: (number | "…")[] = [1];
@@ -29,13 +42,55 @@ function buildPageList(current: number, total: number): (number | "…")[] {
   return pages;
 }
 
+// ── Animated placeholder component ──────────────────────────────────────────
+function AnimatedPlaceholder({ active }: { active: boolean }) {
+  const [idx, setIdx]         = useState(0);
+  const [phase, setPhase]     = useState<"visible" | "exit" | "enter">("visible");
+  const [nextIdx, setNextIdx] = useState(1);
+
+  useEffect(() => {
+    if (active) return; // hide animation when user is typing
+    const interval = setInterval(() => {
+      setPhase("exit");
+      const next = (idx + 1) % SEARCH_SUGGESTIONS.length;
+      setNextIdx(next);
+      setTimeout(() => {
+        setIdx(next);
+        setPhase("enter");
+        setTimeout(() => setPhase("visible"), 320);
+      }, 320);
+    }, 2800);
+    return () => clearInterval(interval);
+  }, [idx, active]);
+
+  if (active) return null;
+
+  return (
+    <span
+      aria-hidden
+      className="pointer-events-none absolute inset-0 flex items-center pl-[52px] pr-4 overflow-hidden"
+    >
+      <span
+        className={cn(
+          "text-base text-outline whitespace-nowrap transition-all duration-300",
+          phase === "visible" && "opacity-100 translate-y-0",
+          phase === "exit"    && "opacity-0 -translate-y-3",
+          phase === "enter"   && "opacity-0 translate-y-3",
+        )}
+      >
+        {SEARCH_SUGGESTIONS[idx]}
+      </span>
+    </span>
+  );
+}
+
 export default function SchemesPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
   const [mode,       setMode]       = useState<Mode>("browse");
-  const [allSchemes, setAllSchemes] = useState<Scheme[]>([]);   // full browse set
-  const [vectorRes,  setVectorRes]  = useState<Scheme[]>([]);   // AI results (no paging)
+  const [allSchemes, setAllSchemes] = useState<Scheme[]>([]);
+  const [vectorRes,  setVectorRes]  = useState<Scheme[]>([]);
   const [fetching,   setFetching]   = useState(true);
   const [searching,  setSearching]  = useState(false);
   const [query,      setQuery]      = useState("");
@@ -44,7 +99,6 @@ export default function SchemesPage() {
   const [page,       setPage]       = useState(1);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Derived values
   const displayList  = mode === "vector" ? vectorRes : allSchemes;
   const totalSchemes = displayList.length;
   const totalPages   = mode === "browse" ? Math.max(1, Math.ceil(totalSchemes / PAGE_SIZE)) : 1;
@@ -58,7 +112,6 @@ export default function SchemesPage() {
     if (!loading && !user) router.push("/login");
   }, [user, loading, router]);
 
-  // Reload browse data when filters change
   useEffect(() => {
     if (user && mode === "browse") {
       setPage(1);
@@ -67,7 +120,6 @@ export default function SchemesPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, category, level]);
 
-  // Debounced vector search
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (!query.trim()) {
@@ -81,7 +133,6 @@ export default function SchemesPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
-  // Fetch all pages from API then paginate client-side
   async function loadBrowse() {
     setFetching(true);
     try {
@@ -149,15 +200,14 @@ export default function SchemesPage() {
               Government Schemes
             </h1>
             <p className="text-on-surface-variant text-base leading-relaxed">
-              Search with AI — type &ldquo;scholarship for girls&rdquo;, &ldquo;farming loan Rajasthan&rdquo;,
-              or any natural-language query.
+              Search with AI — type a natural-language query to find matching schemes instantly.
             </p>
           </div>
 
-          {/* search bar */}
+          {/* search bar with animated placeholder */}
           <div className="relative max-w-2xl mb-5">
-            <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/40 shadow-sm flex items-center gap-3 px-4 h-14">
-              <div className="shrink-0 w-5 flex items-center justify-center">
+            <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/40 shadow-sm flex items-center gap-3 px-4 h-14 relative">
+              <div className="shrink-0 w-5 flex items-center justify-center z-10">
                 {searching ? (
                   <span className="block w-4 h-4 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
                 ) : mode === "vector" && query ? (
@@ -166,21 +216,27 @@ export default function SchemesPage() {
                   <Search size={18} className="text-outline" />
                 )}
               </div>
+
+              {/* Animated placeholder — only shown when input is empty */}
+              <AnimatedPlaceholder active={query.length > 0} />
+
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search schemes with AI…"
-                className="flex-1 h-full bg-transparent text-base text-on-surface focus:outline-none placeholder:text-outline"
+                placeholder=""
+                className="flex-1 h-full bg-transparent text-base text-on-surface focus:outline-none relative z-10"
+                aria-label="Search government schemes"
               />
+
               {mode === "vector" && query && !searching && (
-                <span className="flex items-center gap-1 text-xs text-secondary font-semibold bg-secondary-fixed/40 border border-secondary-fixed px-2.5 py-1 rounded-full shrink-0">
+                <span className="flex items-center gap-1 text-xs text-secondary font-semibold bg-secondary-fixed/40 border border-secondary-fixed px-2.5 py-1 rounded-full shrink-0 z-10">
                   <Sparkles size={10} /> AI
                 </span>
               )}
               {query && (
                 <button
                   onClick={() => setQuery("")}
-                  className="p-1.5 text-outline hover:text-on-surface rounded-lg hover:bg-surface-container transition shrink-0"
+                  className="p-1.5 text-outline hover:text-on-surface rounded-lg hover:bg-surface-container transition shrink-0 z-10"
                 >
                   <X size={16} />
                 </button>
@@ -258,7 +314,6 @@ export default function SchemesPage() {
       {/* ── results area ── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-        {/* result summary */}
         {!fetching && totalSchemes > 0 && (
           <div className="flex items-center justify-between mb-6">
             <p className="text-sm text-on-surface-variant">
@@ -287,7 +342,6 @@ export default function SchemesPage() {
           </div>
         )}
 
-        {/* card grid */}
         {fetching && pageSlice.length === 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 items-start">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -320,10 +374,9 @@ export default function SchemesPage() {
           </div>
         )}
 
-        {/* ── page-number pagination (browse mode only) ── */}
+        {/* page-number pagination (browse mode only) */}
         {mode === "browse" && !fetching && totalPages > 1 && (
           <div className="flex items-center justify-center gap-1.5 mt-10">
-            {/* prev */}
             <button
               onClick={() => goToPage(page - 1)}
               disabled={page === 1}
@@ -338,7 +391,6 @@ export default function SchemesPage() {
               <ChevronLeft size={16} />
             </button>
 
-            {/* page numbers */}
             {buildPageList(page, totalPages).map((p, i) =>
               p === "…" ? (
                 <span
@@ -363,7 +415,6 @@ export default function SchemesPage() {
               )
             )}
 
-            {/* next */}
             <button
               onClick={() => goToPage(page + 1)}
               disabled={page === totalPages}

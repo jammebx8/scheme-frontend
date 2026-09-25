@@ -134,6 +134,11 @@ export interface Scheme {
   tags?: string[];
   eligible?: boolean;
   eligibility_reason?: string;
+  // AI-simplified fields (populated on scheme detail page)
+  summary?: string;
+  benefits_simple?: string;
+  eligibility_simple?: string;
+  documents_simple?: string;
 }
 
 export interface SchemesListResponse {
@@ -197,6 +202,11 @@ export const schemes = {
     request<{ message: string }>("/schemes/eligible/refresh", { method: "POST" }),
 
   getBySlug: (slug: string) => request<Scheme>(`/schemes/${slug}`),
+
+  getSummary: (slug: string) =>
+    request<{ scheme_id: string; summary: string; benefits_simple: string; eligibility_simple: string; documents_simple: string }>(
+      `/schemes/${slug}/summary`
+    ),
 
   getCategories: () => request<{ categories: string[] }>("/schemes/categories"),
 };

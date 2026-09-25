@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 import {
   LayoutDashboard,
   Search,
@@ -13,7 +14,6 @@ import {
   ChevronDown,
   Menu,
   X,
-  ShieldCheck,
   RefreshCw,
 } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -75,19 +75,17 @@ export default function Navbar() {
           {/* Logo */}
           <Link
             href="/dashboard"
-            className="flex items-center gap-3 shrink-0 group"
+            className="flex items-center shrink-0 group"
           >
-            <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-emerald-700 to-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-600/20 group-hover:scale-105 transition">
-              <ShieldCheck className="h-5 w-5 text-white" />
-            </div>
-
-            <div className="hidden sm:block">
-              <h1 className="text-xl font-bold tracking-tight text-slate-900">
-                GovAssist
-              </h1>
-              <p className="text-[11px] text-slate-500 font-medium tracking-wide uppercase">
-                AI Government Platform
-              </p>
+            <div className="group-hover:scale-105 transition-transform duration-200">
+              <Image
+                src="/Agent Image - Design a modern_ professional logo for a digital government services portal that unifi.png"
+                alt="GovAssist — AI Government Platform"
+                width={160}
+                height={44}
+                className="h-11 w-auto object-contain"
+                priority
+              />
             </div>
           </Link>
 
