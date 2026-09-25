@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://scheme-sarthi-nine.vercel.app";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://scheme-backend-ten.vercel.app";
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
