@@ -65,11 +65,26 @@ export default function DashboardPage() {
     setRefreshing(true);
     try {
       await schemesApi.refreshEligibility();
-      await new Promise((r) => setTimeout(r, 4000));
-      const result = await schemesApi.getEligible();
+
+      // Poll until the background Groq job populates the cache.
+      // The LLM batch can take 30–90 s, so we poll every 5 s for up to 2 minutes.
+      const MAX_WAIT_MS = 120_000;
+      const POLL_MS = 5_000;
+      const startedAt = Date.now();
+      let result = await schemesApi.getEligible();
+
+      while (result.total === 0 && Date.now() - startedAt < MAX_WAIT_MS) {
+        await new Promise((r) => setTimeout(r, POLL_MS));
+        result = await schemesApi.getEligible();
+      }
+
       setRecommended(result.schemes);
       setSource("eligible");
-      toast.success(`${result.schemes.length} verified eligible schemes loaded`);
+      if (result.total === 0) {
+        toast.error("Eligibility check timed out. Try again shortly.");
+      } else {
+        toast.success(`${result.schemes.length} verified eligible schemes loaded`);
+      }
     } catch {
       toast.error("Eligibility check failed");
     } finally {

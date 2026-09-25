@@ -127,7 +127,7 @@ export default function SchemeCard({
           {/* ── footer ── */}
           <div className="flex items-center justify-between pt-3 border-t border-surface-container mt-2">
             <p className="text-xs text-on-surface-variant truncate flex-1 min-w-0 mr-2">
-              {scheme.benefits.slice(0, 72)}{scheme.benefits.length > 72 ? "…" : ""}
+            {(scheme.benefits ?? "").slice(0, 72)}{(scheme.benefits ?? "").length > 72 ? "…" : ""}
             </p>
             <ArrowRight
               size={15}
