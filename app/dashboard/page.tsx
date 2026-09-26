@@ -12,13 +12,15 @@ import {
 import Navbar from "@/components/Navbar";
 import SchemeCard from "@/components/SchemeCard";
 import CategoryFilter from "@/components/CategoryFilter";
-import { CATEGORY_ICONS, STATUS_CONFIG, formatDate } from "@/lib/utils";
+import { CATEGORY_EMOJI, STATUS_CONFIG, containsCategory, DB_CATEGORIES } from "@/lib/utils";
 import {
-  RefreshCw, ArrowRight, CheckCircle2,
-  Sparkles, Bot, ChevronRight,
+  ArrowRight, CheckCircle2, Sparkles,
+  ChevronRight, FileEdit,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Link from "next/link";
+
+type RecType = "eligible" | "profile_match" | "popular" | "vector";
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
@@ -28,8 +30,7 @@ export default function DashboardPage() {
   const [recentApps,     setRecentApps]     = useState<ApplicationJob[]>([]);
   const [schemesLoading, setSchemesLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
-  const [refreshing,     setRefreshing]     = useState(false);
-  const [source,         setSource]         = useState<"vector" | "eligible" | "popular" | "profile_match">("popular");
+  const [source,         setSource]         = useState<RecType>("popular");
   const [bgRefreshing,   setBgRefreshing]   = useState(false);
 
   useEffect(() => {
@@ -41,24 +42,26 @@ export default function DashboardPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  // Filter uses containsCategory so "Education & Learning, Health & Wellness"
+  // is correctly matched when the user clicks "Education & Learning"
   const filtered = categoryFilter
-    ? recommended.filter((s) => s.scheme_category === categoryFilter)
+    ? recommended.filter((s) => containsCategory(s.scheme_category, categoryFilter))
     : recommended;
 
   async function loadData() {
     setSchemesLoading(true);
     try {
       const [rec, apps] = await Promise.all([
-        schemesApi.recommend({ limit: 30 }),
+        schemesApi.recommend({ limit: 40 }),
         appsApi.getMyApplications(),
       ]);
-      const recType = (rec as any).recommendation_type as string;
+      const recType = (rec as any).recommendation_type as RecType;
       setRecommended(rec.schemes);
-      setSource(recType === "eligible" ? "eligible" : recType === "profile_match" ? "profile_match" : recType === "popular" ? "popular" : "vector");
+      setSource(recType);
       setRecentApps(apps.applications.slice(0, 3));
 
-      // Silently trigger background LLM eligibility check when user has a
-      // profile but no cache yet — next visit will return verified results.
+      // Silently trigger LLM eligibility refresh in background when user
+      // has a complete profile but no eligibility cache yet.
       if (recType !== "eligible" && user?.profile_complete) {
         setBgRefreshing(true);
         schemesApi.refreshEligibility()
@@ -66,47 +69,22 @@ export default function DashboardPage() {
           .finally(() => setBgRefreshing(false));
       }
     } catch {
-      toast.error("Failed to load data");
+      toast.error("Failed to load recommendations");
     } finally {
       setSchemesLoading(false);
     }
   }
 
-  async function handleVerifyEligibility() {
-    setRefreshing(true);
-    try {
-      await schemesApi.refreshEligibility();
-
-      // Poll until the background Groq job populates the cache.
-      // The LLM batch can take 30–90 s, so we poll every 5 s for up to 2 minutes.
-      const MAX_WAIT_MS = 120_000;
-      const POLL_MS = 5_000;
-      const startedAt = Date.now();
-      let result = await schemesApi.getEligible();
-
-      while (result.total === 0 && Date.now() - startedAt < MAX_WAIT_MS) {
-        await new Promise((r) => setTimeout(r, POLL_MS));
-        result = await schemesApi.getEligible();
-      }
-
-      setRecommended(result.schemes);
-      setSource("eligible");
-      if (result.total === 0) {
-        toast.error("Eligibility check timed out. Try again shortly.");
-      } else {
-        toast.success(`${result.schemes.length} verified eligible schemes loaded`);
-      }
-    } catch {
-      toast.error("Eligibility check failed");
-    } finally {
-      setRefreshing(false);
-    }
-  }
-
-  // category tile stats
+  // Build category quick-filter tiles from actual recommended schemes
   const catCount: Record<string, number> = {};
   recommended.forEach((s) => {
-    catCount[s.scheme_category] = (catCount[s.scheme_category] || 0) + 1;
+    // A scheme may belong to multiple categories (CSV). Count each.
+    const cats = s.scheme_category?.split(",").map((c) => c.trim()) ?? [];
+    cats.forEach((c) => {
+      if (DB_CATEGORIES.includes(c as any)) {
+        catCount[c] = (catCount[c] || 0) + 1;
+      }
+    });
   });
   const topCats = Object.entries(catCount).sort((a, b) => b[1] - a[1]).slice(0, 4);
 
@@ -132,7 +110,6 @@ export default function DashboardPage() {
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-secondary" />
 
           <div className="relative px-6 sm:px-8 py-6">
-            {/* top row */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 mb-2">
@@ -154,6 +131,7 @@ export default function DashboardPage() {
                     </span>
                   )}
                 </div>
+
                 <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight leading-tight">
                   Welcome back,{" "}
                   <span className="text-emerald-300">
@@ -162,17 +140,17 @@ export default function DashboardPage() {
                 </h1>
                 <p className="text-white/55 text-sm mt-1.5 leading-snug">
                   {schemesLoading
-                    ? "Finding personalised schemes for you…"
+                    ? "Finding schemes matched to your profile…"
                     : source === "eligible"
-                      ? `${recommended.length} AI-verified eligible schemes`
+                      ? `${recommended.length} schemes you're eligible for`
                       : source === "profile_match"
                         ? `${recommended.length} schemes matched to your profile`
-                        : `${recommended.length} schemes`
+                        : `${recommended.length} schemes available`
                   }
                 </p>
               </div>
 
-              {/* stat + actions */}
+              {/* actions — Edit Documents replaces verify/refresh */}
               <div className="flex items-center gap-3 shrink-0">
                 {!schemesLoading && (
                   <div className="hidden sm:flex flex-col items-center px-5 py-3 rounded-xl bg-white/8 border border-white/12">
@@ -182,93 +160,81 @@ export default function DashboardPage() {
                     <span className="text-xs text-white/50 mt-1 uppercase tracking-wide">schemes</span>
                   </div>
                 )}
-                <div className="flex flex-col gap-2">
-                  <button
-                    onClick={handleVerifyEligibility}
-                    disabled={refreshing}
-                    className="flex items-center gap-2 bg-secondary hover:opacity-90 text-on-secondary text-sm font-semibold px-4 py-2.5 rounded-lg transition shadow-sm disabled:opacity-60"
-                  >
-                    <Bot size={14} className={refreshing ? "animate-pulse" : ""} />
-                    {refreshing ? "Checking…" : "Verify with AI"}
-                  </button>
-                  <button
-                    onClick={loadData}
-                    disabled={schemesLoading}
-                    className="flex items-center gap-2 bg-white/8 hover:bg-white/15 border border-white/12 text-white text-sm font-medium px-4 py-2.5 rounded-lg transition"
-                  >
-                    <RefreshCw size={13} className={schemesLoading ? "animate-spin" : ""} />
-                    Refresh
-                  </button>
-                </div>
+                <Link
+                  href="/onboarding"
+                  className="flex items-center gap-2 bg-white text-slate-900 hover:bg-slate-100 text-sm font-semibold px-4 py-2.5 rounded-lg transition shadow-sm"
+                >
+                  <FileEdit size={14} />
+                  Edit Documents
+                </Link>
               </div>
             </div>
 
-            {/* category tiles */}
+            {/* category quick-filter tiles */}
             {topCats.length > 0 && (
               <div className="mt-5 pt-5 border-t border-white/8">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  {topCats.map(([cat, count]) => (
-                    <button
-                      key={cat}
-                      onClick={() => setCategoryFilter(cat === categoryFilter ? null : cat)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left ${
-                        categoryFilter === cat
-                          ? "bg-secondary border-secondary/60 text-on-secondary shadow-sm"
-                          : "bg-white/6 border-white/10 hover:bg-white/12 hover:border-white/20"
-                      }`}
-                    >
-                      <span className="text-xl shrink-0">{CATEGORY_ICONS[cat] || "📋"}</span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold truncate leading-tight">{cat}</p>
-                        <p className={`text-xs mt-0.5 ${categoryFilter === cat ? "text-on-secondary/70" : "text-white/45"}`}>
-                          {count} schemes
-                        </p>
-                      </div>
-                    </button>
-                  ))}
+                  {topCats.map(([cat, count]) => {
+                    const emoji    = CATEGORY_EMOJI[cat] ?? "📋";
+                    const isActive = categoryFilter === cat;
+                    // Short display name
+                    const label = cat.split(",")[0].trim();
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setCategoryFilter(isActive ? null : cat)}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left ${
+                          isActive
+                            ? "bg-white text-slate-900 border-white shadow-sm"
+                            : "bg-white/6 border-white/10 hover:bg-white/12 hover:border-white/20 text-white"
+                        }`}
+                      >
+                        <span className="text-xl shrink-0">{emoji}</span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold truncate leading-tight">{label}</p>
+                          <p className={`text-xs mt-0.5 ${isActive ? "text-slate-500" : "text-white/45"}`}>
+                            {count} scheme{count !== 1 ? "s" : ""}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
           </div>
         </section>
 
-        {/* ── quick stats row (replaces sidebar) ── */}
+        {/* ── quick tiles row ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-7">
-          {/* recent applications mini-strip */}
-          {recentApps.length > 0
-            ? recentApps.slice(0, 2).map((app) => {
-                const cfg  = STATUS_CONFIG[app.status];
-                const name = app.government_schemes?.scheme_name || "Unknown";
-                return (
-                  <Link
-                    key={app.id}
-                    href={`/applications/${app.id}`}
-                    className="col-span-1 bg-surface-container-lowest rounded-xl border border-outline-variant/40 px-4 py-3 hover:border-secondary/40 hover:shadow-card transition group"
-                  >
-                    <p className="text-xs text-on-surface-variant font-semibold uppercase tracking-wide mb-1">
-                      Application
-                    </p>
-                    <p className="text-sm font-semibold text-on-surface truncate">{name}</p>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${cfg?.color}`}>
-                        {cfg?.icon} {cfg?.label}
-                      </span>
-                      <ChevronRight size={13} className="text-outline-variant group-hover:text-secondary transition" />
-                    </div>
-                  </Link>
-                );
-              })
-            : null
-          }
+          {recentApps.slice(0, 2).map((app) => {
+            const cfg  = STATUS_CONFIG[app.status];
+            const name = app.government_schemes?.scheme_name || "Unknown";
+            return (
+              <Link
+                key={app.id}
+                href={`/applications/${app.id}`}
+                className="col-span-1 bg-surface-container-lowest rounded-xl border border-outline-variant/40 px-4 py-3 hover:border-secondary/40 hover:shadow-card transition group"
+              >
+                <p className="text-xs text-on-surface-variant font-semibold uppercase tracking-wide mb-1">
+                  Application
+                </p>
+                <p className="text-sm font-semibold text-on-surface truncate">{name}</p>
+                <div className="flex items-center justify-between mt-2">
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${cfg?.color}`}>
+                    {cfg?.icon} {cfg?.label}
+                  </span>
+                  <ChevronRight size={13} className="text-outline-variant group-hover:text-secondary transition" />
+                </div>
+              </Link>
+            );
+          })}
 
-          {/* "browse all schemes" tile */}
           <Link
             href="/schemes"
             className="col-span-1 bg-secondary/10 border border-secondary/20 rounded-xl px-4 py-3 hover:bg-secondary/15 hover:border-secondary/40 transition group"
           >
-            <p className="text-xs text-secondary font-semibold uppercase tracking-wide mb-1">
-              Discover
-            </p>
+            <p className="text-xs text-secondary font-semibold uppercase tracking-wide mb-1">Discover</p>
             <p className="text-sm font-semibold text-on-surface">All Schemes</p>
             <div className="flex items-center justify-between mt-2">
               <span className="text-xs text-on-surface-variant">Browse full catalogue</span>
@@ -276,14 +242,11 @@ export default function DashboardPage() {
             </div>
           </Link>
 
-          {/* view all applications tile */}
           <Link
             href="/applications"
             className="col-span-1 bg-surface-container-lowest border border-outline-variant/40 rounded-xl px-4 py-3 hover:border-secondary/40 hover:shadow-card transition group"
           >
-            <p className="text-xs text-on-surface-variant font-semibold uppercase tracking-wide mb-1">
-              Tracker
-            </p>
+            <p className="text-xs text-on-surface-variant font-semibold uppercase tracking-wide mb-1">Tracker</p>
             <p className="text-sm font-semibold text-on-surface">My Applications</p>
             <div className="flex items-center justify-between mt-2">
               <span className="text-xs text-on-surface-variant">View history</span>
@@ -292,7 +255,7 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        {/* ── schemes feed — full width ── */}
+        {/* ── schemes feed ── */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-display font-semibold text-on-surface flex items-center gap-2 text-lg">
@@ -300,12 +263,12 @@ export default function DashboardPage() {
                 ? <><CheckCircle2 size={16} className="text-secondary" />Eligible Schemes</>
                 : source === "profile_match"
                   ? <><Sparkles size={16} className="text-secondary" />Matched to Your Profile</>
-                  : source === "popular"
-                    ? <><Sparkles size={16} className="text-secondary" />Popular Schemes</>
-                    : <><Sparkles size={16} className="text-secondary" />Recommended for You</>
+                  : <><Sparkles size={16} className="text-secondary" />Popular Schemes</>
               }
               {categoryFilter && (
-                <span className="text-secondary font-normal text-base">· {categoryFilter}</span>
+                <span className="text-secondary font-normal text-base">
+                  · {categoryFilter.split(",")[0].trim()}
+                </span>
               )}
             </h2>
             <Link
@@ -330,13 +293,11 @@ export default function DashboardPage() {
           ) : filtered.length === 0 ? (
             <div className="bg-surface-container-lowest rounded-xl border border-dashed border-outline-variant p-12 text-center">
               <div className="text-4xl mb-3">🔍</div>
-              <p className="font-display font-semibold text-on-surface text-base mb-1">
-                No schemes found
-              </p>
+              <p className="font-display font-semibold text-on-surface text-base mb-1">No schemes found</p>
               <p className="text-sm text-on-surface-variant">
                 {categoryFilter
-                  ? "Try a different category"
-                  : "Complete your profile for better recommendations"}
+                  ? "No schemes in this category match your profile"
+                  : "Complete your profile for personalised recommendations"}
               </p>
               {categoryFilter && (
                 <button
@@ -350,7 +311,11 @@ export default function DashboardPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
               {filtered.map((s) => (
-                <SchemeCard key={s.id} scheme={s} showEligibility={source === "eligible"} />
+                <SchemeCard
+                  key={s.id}
+                  scheme={s}
+                  showEligibility={source === "eligible"}
+                />
               ))}
             </div>
           )}

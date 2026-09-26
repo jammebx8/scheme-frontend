@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Scheme } from "@/lib/api";
-import { CATEGORY_ICONS, cn } from "@/lib/utils";
+import { CATEGORY_EMOJI, cn } from "@/lib/utils";
 import { CheckCircle2, XCircle, ArrowRight } from "lucide-react";
 
 interface Props {
@@ -12,110 +12,154 @@ interface Props {
 }
 
 const LEVEL_PILL: Record<string, string> = {
-  Central:         "bg-primary-fixed text-on-primary-fixed",
-  State:           "bg-secondary-fixed text-on-secondary-fixed",
-  "State-Central": "bg-surface-container-highest text-on-surface",
+  Central:         "bg-slate-900 text-white",
+  State:           "bg-white text-slate-900 border border-slate-300",
+  "State-Central": "bg-slate-100 text-slate-700 border border-slate-200",
 };
 
-const CAT_ACCENT: Record<string, { bg: string; bar: string }> = {
-  Education:            { bg: "bg-sky-50",     bar: "bg-sky-400"    },
-  Agriculture:          { bg: "bg-lime-50",    bar: "bg-lime-500"   },
-  Housing:              { bg: "bg-amber-50",   bar: "bg-amber-400"  },
-  Health:               { bg: "bg-rose-50",    bar: "bg-rose-400"   },
-  "Women & Child":      { bg: "bg-pink-50",    bar: "bg-pink-400"   },
-  "Social Welfare":     { bg: "bg-teal-50",    bar: "bg-teal-500"   },
-  Employment:           { bg: "bg-violet-50",  bar: "bg-violet-400" },
-  "Business & MSME":    { bg: "bg-orange-50",  bar: "bg-orange-400" },
-  Pension:              { bg: "bg-yellow-50",  bar: "bg-yellow-500" },
-  Scholarship:          { bg: "bg-indigo-50",  bar: "bg-indigo-400" },
-  "Skill Development":  { bg: "bg-cyan-50",    bar: "bg-cyan-500"   },
-  "Minority Welfare":   { bg: "bg-purple-50",  bar: "bg-purple-400" },
-  "Differently Abled":  { bg: "bg-green-50",   bar: "bg-green-500"  },
-  "Financial Inclusion":{ bg: "bg-blue-50",    bar: "bg-blue-400"   },
+const CAT_BAR: Record<string, string> = {
+  "Agriculture,Rural & Environment":           "bg-lime-500",
+  "Banking,Financial Services and Insurance":  "bg-blue-500",
+  "Business & Entrepreneurship":               "bg-orange-400",
+  "Education & Learning":                      "bg-sky-500",
+  "Health & Wellness":                         "bg-rose-400",
+  "Housing & Shelter":                         "bg-amber-400",
+  "Public Safety,Law & Justice":               "bg-slate-600",
+  "Science, IT & Communications":              "bg-cyan-500",
+  "Skills & Employment":                       "bg-violet-500",
+  "Social welfare & Empowerment":              "bg-teal-500",
+  "Sports & Culture":                          "bg-pink-400",
+  "Transport & Infrastructure":                "bg-indigo-500",
+  "Travel & Tourism":                          "bg-emerald-400",
+  "Utility & Sanitation":                      "bg-yellow-500",
+  "Women and Child":                           "bg-fuchsia-400",
+  // legacy
+  Education: "bg-sky-400",
+  Agriculture: "bg-lime-500",
+  Housing: "bg-amber-400",
+  Health: "bg-rose-400",
+  "Women & Child": "bg-pink-400",
+  "Social Welfare": "bg-teal-500",
+  Employment: "bg-violet-500",
+  "Business & MSME": "bg-orange-400",
+  Pension: "bg-yellow-500",
+  Scholarship: "bg-indigo-400",
+  "Skill Development": "bg-cyan-500",
+  "Minority Welfare": "bg-purple-400",
+  "Differently Abled": "bg-green-500",
+  "Financial Inclusion": "bg-blue-500",
 };
+
+// Short display name for the category badge on the card
+const SHORT_CAT: Record<string, string> = {
+  "Agriculture,Rural & Environment":           "Agriculture",
+  "Banking,Financial Services and Insurance":  "Banking",
+  "Business & Entrepreneurship":               "Business",
+  "Education & Learning":                      "Education",
+  "Health & Wellness":                         "Health",
+  "Housing & Shelter":                         "Housing",
+  "Public Safety,Law & Justice":               "Law",
+  "Science, IT & Communications":              "Science & IT",
+  "Skills & Employment":                       "Employment",
+  "Social welfare & Empowerment":              "Social Welfare",
+  "Sports & Culture":                          "Sports",
+  "Transport & Infrastructure":                "Transport",
+  "Travel & Tourism":                          "Travel",
+  "Utility & Sanitation":                      "Utilities",
+  "Women and Child":                           "Women & Child",
+};
+
+function MatchBadge({ score }: { score: number }) {
+  const pct = Math.round(score);
+  const color =
+    pct >= 80 ? "bg-emerald-100 text-emerald-700 border-emerald-200" :
+    pct >= 55 ? "bg-amber-100  text-amber-700  border-amber-200"  :
+                "bg-slate-100  text-slate-600  border-slate-200";
+  return (
+    <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full border shrink-0", color)}>
+      {pct}% match
+    </span>
+  );
+}
 
 export default function SchemeCard({
   scheme,
   showEligibility = false,
   compact = false,
 }: Props) {
-  const icon      = CATEGORY_ICONS[scheme.scheme_category] || "📋";
-  const accent    = CAT_ACCENT[scheme.scheme_category] || { bg: "bg-surface-container", bar: "bg-outline" };
-  const levelPill = LEVEL_PILL[scheme.level]           || "bg-surface-container text-on-surface-variant";
+  // For multi-category DB values, show the first segment as the primary category
+  const primaryCat = scheme.scheme_category?.split(",")[0]?.trim() ?? scheme.scheme_category;
+  const icon       = CATEGORY_EMOJI[primaryCat] ?? CATEGORY_EMOJI[scheme.scheme_category] ?? "📋";
+  const bar        = CAT_BAR[primaryCat] ?? CAT_BAR[scheme.scheme_category] ?? "bg-slate-400";
+  const levelPill  = LEVEL_PILL[scheme.level] ?? "bg-slate-100 text-slate-700";
+  const catLabel   = SHORT_CAT[primaryCat] ?? SHORT_CAT[scheme.scheme_category] ?? primaryCat;
 
   return (
     <Link href={`/schemes/${scheme.slug}`} className="block group min-w-0 w-full">
       <article
         className={cn(
-          "scheme-card bg-surface-container-lowest rounded-xl border border-outline-variant/40",
-          "overflow-hidden flex flex-col",
-          "hover:border-secondary/50 hover:shadow-card-hover"
+          "bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col",
+          "hover:border-slate-400 hover:shadow-md transition-all duration-200"
         )}
       >
-        {/* category colour accent bar */}
-        <div className={cn("h-[3px] w-full", accent.bar)} />
+        {/* category colour bar */}
+        <div className={cn("h-[3px] w-full", bar)} />
 
-        <div className={cn("flex flex-col flex-1", compact ? "p-4" : "p-5 sm:p-6")}>
+        <div className={cn("flex flex-col flex-1", compact ? "p-4" : "p-5")}>
 
-          {/* ── header row ── */}
+          {/* header row */}
           <div className="flex items-start gap-3 mb-3">
-            {/* emoji icon */}
-            <div
-              className={cn(
-                "rounded-xl flex items-center justify-center shrink-0",
-                accent.bg,
-                compact ? "w-10 h-10 text-xl" : "w-12 h-12 text-2xl"
-              )}
-            >
+            <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-xl shrink-0">
               {icon}
             </div>
 
-            {/* title + pills */}
             <div className="min-w-0 flex-1 overflow-hidden">
               <h3
                 className={cn(
-                  "font-semibold text-on-surface group-hover:text-secondary transition-colors leading-snug line-clamp-2",
-                  compact ? "text-sm" : "text-base"
+                  "font-semibold text-slate-900 group-hover:text-slate-700 transition-colors leading-snug line-clamp-2",
+                  compact ? "text-sm" : "text-[14px]"
                 )}
               >
                 {scheme.scheme_name}
               </h3>
               <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                <span className={cn("text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap", levelPill)}>
+                <span className={cn("text-[10px] px-2 py-0.5 rounded-full font-bold whitespace-nowrap", levelPill)}>
                   {scheme.level}
                 </span>
-                <span className="text-xs text-on-surface-variant truncate">
-                  {scheme.scheme_category}
+                <span className="text-[11px] text-slate-500 truncate">
+                  {catLabel}
                 </span>
               </div>
             </div>
 
-            {/* eligibility icon */}
-            {showEligibility && scheme.eligible !== undefined && (
-              <div className="shrink-0 mt-0.5">
-                {scheme.eligible
-                  ? <CheckCircle2 size={18} className="text-secondary" />
-                  : <XCircle      size={18} className="text-outline-variant" />
-                }
-              </div>
-            )}
+            {/* right badges column */}
+            <div className="shrink-0 flex flex-col items-end gap-1 mt-0.5">
+              {typeof scheme.match_score === "number" && (
+                <MatchBadge score={scheme.match_score} />
+              )}
+              {showEligibility && scheme.eligible !== undefined && (
+                scheme.eligible
+                  ? <CheckCircle2 size={16} className="text-emerald-500" />
+                  : <XCircle      size={16} className="text-slate-300" />
+              )}
+            </div>
           </div>
 
-          {/* ── description ── */}
+          {/* description */}
           {!compact && (
-            <p className="text-sm text-on-surface-variant leading-relaxed line-clamp-2 mb-3">
+            <p className="text-[12px] text-slate-500 leading-relaxed line-clamp-2 mb-3">
               {scheme.details}
             </p>
           )}
 
-          {/* ── eligibility reason chip ── */}
+          {/* eligibility reason chip */}
           {showEligibility && scheme.eligibility_reason && (
             <div
               className={cn(
-                "text-xs px-3 py-1.5 rounded-lg mb-3 leading-snug",
+                "text-[11px] px-2.5 py-1.5 rounded-lg mb-3 leading-snug border",
                 scheme.eligible
-                  ? "bg-secondary-fixed/30 text-on-secondary-container border border-secondary-fixed/50"
-                  : "bg-surface-container text-on-surface-variant border border-outline-variant/40"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  : "bg-slate-50 text-slate-500 border-slate-200"
               )}
             >
               {scheme.eligibility_reason}
@@ -124,14 +168,14 @@ export default function SchemeCard({
 
           <div className="flex-1" />
 
-          {/* ── footer ── */}
-          <div className="flex items-center justify-between pt-3 border-t border-surface-container mt-2">
-            <p className="text-xs text-on-surface-variant truncate flex-1 min-w-0 mr-2">
-            {(scheme.benefits ?? "").slice(0, 72)}{(scheme.benefits ?? "").length > 72 ? "…" : ""}
+          {/* footer */}
+          <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-2">
+            <p className="text-[11px] text-slate-400 truncate flex-1 min-w-0 mr-2">
+              {(scheme.benefits ?? "").slice(0, 72)}{(scheme.benefits ?? "").length > 72 ? "…" : ""}
             </p>
             <ArrowRight
-              size={15}
-              className="text-outline-variant group-hover:text-secondary group-hover:translate-x-0.5 transition-all shrink-0"
+              size={14}
+              className="text-slate-300 group-hover:text-slate-700 group-hover:translate-x-0.5 transition-all shrink-0"
             />
           </div>
         </div>

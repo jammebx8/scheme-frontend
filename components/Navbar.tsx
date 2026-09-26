@@ -70,7 +70,7 @@ export default function Navbar() {
 
       {/* Navbar */}
       <header className="fixed top-0 inset-x-0 z-50 border-b border-slate-200/70 bg-white/90 backdrop-blur-xl shadow-[0_4px_30px_rgba(15,23,42,0.06)]">
-      <div className="w-full h-[72px] px-6 lg:px-8 flex items-center justify-between">
+      <div className="w-full h-[80px] px-6 lg:px-8 flex items-center justify-between">
 
           {/* Logo */}
           <Link
@@ -81,9 +81,9 @@ export default function Navbar() {
               <Image
                 src="/Agent Image - Design a modern_ professional logo for a digital government services portal that unifi.png"
                 alt="GovAssist — AI Government Platform"
-                width={160}
-                height={44}
-                className="h-11 w-auto object-contain"
+                width={200}
+                height={56}
+                className="h-14 w-auto object-contain"
                 priority
               />
             </div>
@@ -231,7 +231,7 @@ export default function Navbar() {
       </header>
 
       {/* Spacer */}
-      <div className="h-[72px]" />
+      <div className="h-[80px]" />
     </>
   );
 }

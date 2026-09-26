@@ -35,7 +35,60 @@ export function timeAgo(dateStr: string): string {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
-export const CATEGORY_ICONS: Record<string, string> = {
+// ── Real DB category names from government_schemes.scheme_category ──────────
+// These are the top-level canonical names. DB values may be comma-joined
+// multi-category strings — use containsCategory() to match.
+export const DB_CATEGORIES = [
+  "Agriculture,Rural & Environment",
+  "Banking,Financial Services and Insurance",
+  "Business & Entrepreneurship",
+  "Education & Learning",
+  "Health & Wellness",
+  "Housing & Shelter",
+  "Public Safety,Law & Justice",
+  "Science, IT & Communications",
+  "Skills & Employment",
+  "Social welfare & Empowerment",
+  "Sports & Culture",
+  "Transport & Infrastructure",
+  "Travel & Tourism",
+  "Utility & Sanitation",
+  "Women and Child",
+] as const;
+
+export type DBCategory = typeof DB_CATEGORIES[number];
+
+// PNG icons available in /public — mapped to DB category names.
+// Categories without a dedicated PNG fall back to an emoji.
+export const CATEGORY_ICON_PNG: Partial<Record<DBCategory, string>> = {
+  "Agriculture,Rural & Environment":           "/farm.png",
+  "Banking,Financial Services and Insurance":  "/money.png",
+  "Business & Entrepreneurship":               "/money.png",
+  "Education & Learning":                      "/student.png",
+  "Health & Wellness":                         "/first-aid.png",
+  "Housing & Shelter":                         "/house.png",
+  "Skills & Employment":                       "/student.png",
+  "Social welfare & Empowerment":              "/wheelchair.png",
+  "Women and Child":                           "/first-aid.png",
+};
+
+export const CATEGORY_EMOJI: Record<string, string> = {
+  "Agriculture,Rural & Environment":           "🌾",
+  "Banking,Financial Services and Insurance":  "🏦",
+  "Business & Entrepreneurship":               "💼",
+  "Education & Learning":                      "🎓",
+  "Health & Wellness":                         "🏥",
+  "Housing & Shelter":                         "🏠",
+  "Public Safety,Law & Justice":               "⚖️",
+  "Science, IT & Communications":              "💻",
+  "Skills & Employment":                       "🛠️",
+  "Social welfare & Empowerment":              "🤝",
+  "Sports & Culture":                          "🏅",
+  "Transport & Infrastructure":                "🚌",
+  "Travel & Tourism":                          "✈️",
+  "Utility & Sanitation":                      "🚿",
+  "Women and Child":                           "👩‍👧",
+  // Legacy names kept for backwards compat
   Education: "🎓",
   Agriculture: "🌾",
   Housing: "🏠",
@@ -51,6 +104,25 @@ export const CATEGORY_ICONS: Record<string, string> = {
   "Differently Abled": "♿",
   "Financial Inclusion": "🏦",
 };
+
+// Keep CATEGORY_ICONS as the emoji fallback map for SchemeCard / legacy usage
+export const CATEGORY_ICONS = CATEGORY_EMOJI;
+
+/**
+ * Returns true if a scheme's scheme_category value (which may be a
+ * comma-joined multi-category string like "Education & Learning, Health & Wellness")
+ * contains the given filter category.
+ */
+export function containsCategory(schemeCategory: string, filter: string): boolean {
+  if (!schemeCategory || !filter) return false;
+  // Exact match first
+  if (schemeCategory === filter) return true;
+  // Multi-value: "Education & Learning, Health & Wellness, Women and Child"
+  return schemeCategory
+    .split(",")
+    .map((s) => s.trim())
+    .some((s) => s === filter);
+}
 
 export const LEVEL_COLORS: Record<string, string> = {
   Central: "bg-blue-100 text-blue-800",

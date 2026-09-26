@@ -1,19 +1,31 @@
 "use client";
 
-import { CATEGORY_ICONS, cn } from "@/lib/utils";
-
-const CATEGORIES = [
-  "Education", "Agriculture", "Housing", "Health",
-  "Women & Child", "Social Welfare", "Employment",
-  "Business & MSME", "Pension", "Scholarship",
-  "Skill Development", "Minority Welfare", "Differently Abled",
-  "Financial Inclusion",
-];
+import Image from "next/image";
+import { DB_CATEGORIES, CATEGORY_ICON_PNG, CATEGORY_EMOJI, cn } from "@/lib/utils";
 
 interface Props {
   selected: string | null;
   onChange: (cat: string | null) => void;
 }
+
+// Short display labels for pills (avoid wrapping on narrow screens)
+const SHORT_LABEL: Record<string, string> = {
+  "Agriculture,Rural & Environment":           "Agriculture",
+  "Banking,Financial Services and Insurance":  "Banking & Finance",
+  "Business & Entrepreneurship":               "Business",
+  "Education & Learning":                      "Education",
+  "Health & Wellness":                         "Health",
+  "Housing & Shelter":                         "Housing",
+  "Public Safety,Law & Justice":               "Law & Justice",
+  "Science, IT & Communications":              "Science & IT",
+  "Skills & Employment":                       "Employment",
+  "Social welfare & Empowerment":              "Social Welfare",
+  "Sports & Culture":                          "Sports & Culture",
+  "Transport & Infrastructure":                "Transport",
+  "Travel & Tourism":                          "Travel & Tourism",
+  "Utility & Sanitation":                      "Utilities",
+  "Women and Child":                           "Women & Child",
+};
 
 export default function CategoryFilter({ selected, onChange }: Props) {
   return (
@@ -24,28 +36,48 @@ export default function CategoryFilter({ selected, onChange }: Props) {
         className={cn(
           "shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all whitespace-nowrap border",
           !selected
-            ? "bg-primary text-on-primary border-primary shadow-chip"
-            : "bg-surface-container-lowest text-on-surface-variant border-outline-variant hover:border-outline hover:text-on-surface"
+            ? "bg-slate-900 text-white border-slate-900 shadow-sm"
+            : "bg-white text-slate-700 border-slate-300 hover:border-slate-500 hover:text-slate-900"
         )}
       >
         All Schemes
       </button>
 
-      {CATEGORIES.map((cat) => (
-        <button
-          key={cat}
-          onClick={() => onChange(selected === cat ? null : cat)}
-          className={cn(
-            "shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all whitespace-nowrap border",
-            selected === cat
-              ? "bg-secondary text-on-secondary border-secondary shadow-chip"
-              : "bg-surface-container-lowest text-on-surface-variant border-outline-variant hover:border-secondary/50 hover:text-secondary hover:bg-secondary-fixed/20"
-          )}
-        >
-          <span className="text-[13px]">{CATEGORY_ICONS[cat] || "📋"}</span>
-          {cat}
-        </button>
-      ))}
+      {DB_CATEGORIES.map((cat) => {
+        const pngSrc  = CATEGORY_ICON_PNG[cat];
+        const emoji   = CATEGORY_EMOJI[cat];
+        const isActive = selected === cat;
+        const label   = SHORT_LABEL[cat] ?? cat;
+
+        return (
+          <button
+            key={cat}
+            onClick={() => onChange(isActive ? null : cat)}
+            className={cn(
+              "shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[12px] font-semibold transition-all whitespace-nowrap border",
+              isActive
+                ? "bg-slate-900 text-white border-slate-900 shadow-sm"
+                : "bg-white text-slate-700 border-slate-300 hover:border-slate-500 hover:text-slate-900 hover:bg-slate-50"
+            )}
+          >
+            {pngSrc ? (
+              <Image
+                src={pngSrc}
+                alt=""
+                width={14}
+                height={14}
+                className={cn(
+                  "object-contain shrink-0",
+                  isActive ? "brightness-0 invert" : "opacity-70"
+                )}
+              />
+            ) : (
+              <span className="text-[13px] leading-none">{emoji}</span>
+            )}
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 }

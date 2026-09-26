@@ -139,6 +139,8 @@ export interface Scheme {
   benefits_simple?: string;
   eligibility_simple?: string;
   documents_simple?: string;
+  // Profile match score 0–100 (populated by /recommend endpoint)
+  match_score?: number;
 }
 
 export interface SchemesListResponse {
