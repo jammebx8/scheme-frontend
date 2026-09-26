@@ -80,7 +80,7 @@ export default function Navbar() {
             <div className="group-hover:scale-105 transition-transform duration-200">
               <Image
                 src="/Agent Image - Design a modern_ professional logo for a digital government services portal that unifi.png"
-                alt="GovAssist — AI Government Platform"
+                alt="Scheme Sarthi"
                 width={200}
                 height={56}
                 className="h-14 w-auto object-contain"

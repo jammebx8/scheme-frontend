@@ -4,9 +4,9 @@ import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
-  title: "GovAssist — Apply to Government Schemes with AI",
+  title: "Scheme Sarthi — Discover Government Schemes Made for You",
   description:
-    "Discover all government schemes you are eligible for and apply with a single click using our AI agent.",
+    "India's AI-first platform that finds every government scheme you are eligible for and helps you apply in one click. Powered by LLMs and semantic search.",
   icons: { icon: "/favicon.ico" },
 };
 
@@ -18,7 +18,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Inter + Plus Jakarta Sans for display headings */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"

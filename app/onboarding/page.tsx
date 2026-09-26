@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { users, UserDocument } from "@/lib/api";
+import Image from "next/image";
 import PersonalDetails from "./steps/PersonalDetails";
 import DocumentUpload from "./steps/DocumentUpload";
 import { cn } from "@/lib/utils";
@@ -44,12 +45,13 @@ export default function OnboardingPage() {
       <header className="bg-surface-container-lowest border-b border-outline-variant/30 shadow-[0_1px_8px_rgba(0,0,0,0.06)]">
         <div className="max-w-2xl mx-auto px-5 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-on-primary font-black text-sm shadow-sm">
-              G
-            </div>
-            <span className="font-display font-bold text-primary text-[15px]">
-              GovAssist
-            </span>
+            <Image
+              src="/Agent Image - Design a modern_ professional logo for a digital government services portal that unifi.png"
+              alt="Scheme Sarthi"
+              width={140}
+              height={36}
+              className="h-9 w-auto object-contain"
+            />
           </div>
           <span className="text-[12px] text-on-surface-variant font-medium">
             Profile Setup · Step {step} of {STEPS.length}

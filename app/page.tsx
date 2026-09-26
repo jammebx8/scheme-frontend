@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import Image from "next/image";
 
 export default function SplashPage() {
   const { user, loading } = useAuth();
@@ -33,16 +34,20 @@ export default function SplashPage() {
       />
 
       <div className="relative text-center text-on-primary select-none px-4">
-        {/* logo mark */}
-        <div className="w-20 h-20 rounded-3xl bg-white/10 border border-white/20 flex items-center justify-center font-black text-4xl mx-auto mb-6 shadow-lg">
-          G
+        {/* logo */}
+        <div className="mb-6">
+          <Image
+            src="/Agent Image - Design a modern_ professional logo for a digital government services portal that unifi.png"
+            alt="Scheme Sarthi"
+            width={200}
+            height={56}
+            className="h-14 w-auto object-contain brightness-0 invert mx-auto"
+            priority
+          />
         </div>
 
-        <h1 className="font-display text-3xl font-bold mb-1 tracking-tight">
-          GovAssist
-        </h1>
         <p className="text-white/50 text-sm mb-8 font-medium">
-          AI-Powered Government Scheme Portal
+          Discovering your eligible schemes…
         </p>
 
         {/* animated dots */}
