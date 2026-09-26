@@ -12,10 +12,12 @@ import {
 import Navbar from "@/components/Navbar";
 import SchemeCard from "@/components/SchemeCard";
 import CategoryFilter from "@/components/CategoryFilter";
-import { CATEGORY_EMOJI, STATUS_CONFIG, containsCategory, DB_CATEGORIES } from "@/lib/utils";
+import { STATUS_CONFIG, containsCategory, DB_CATEGORIES } from "@/lib/utils";
+import CategoryIcon from "@/components/CategoryIcon";
+import StatusIcon from "@/components/StatusIcon";
 import {
   ArrowRight, CheckCircle2, Sparkles,
-  ChevronRight, FileEdit,
+  ChevronRight, FileEdit, Search,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Link from "next/link";
@@ -114,7 +116,7 @@ export default function DashboardPage() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/8 border border-white/12 text-xs font-medium text-white/60 uppercase tracking-wider">
-                    <Sparkles size={10} className="text-emerald-300" />
+                    
                     {new Date().toLocaleDateString("en-IN", {
                       weekday: "long", day: "numeric", month: "long",
                     })}
@@ -175,9 +177,7 @@ export default function DashboardPage() {
               <div className="mt-5 pt-5 border-t border-white/8">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   {topCats.map(([cat, count]) => {
-                    const emoji    = CATEGORY_EMOJI[cat] ?? "📋";
                     const isActive = categoryFilter === cat;
-                    // Short display name
                     const label = cat.split(",")[0].trim();
                     return (
                       <button
@@ -189,7 +189,12 @@ export default function DashboardPage() {
                             : "bg-white/6 border-white/10 hover:bg-white/12 hover:border-white/20 text-white"
                         }`}
                       >
-                        <span className="text-xl shrink-0">{emoji}</span>
+                        <CategoryIcon
+                          category={cat}
+                          size={20}
+                          strokeWidth={1.8}
+                          className="shrink-0 opacity-90"
+                        />
                         <div className="min-w-0">
                           <p className="text-sm font-semibold truncate leading-tight">{label}</p>
                           <p className={`text-xs mt-0.5 ${isActive ? "text-slate-500" : "text-white/45"}`}>
@@ -221,8 +226,9 @@ export default function DashboardPage() {
                 </p>
                 <p className="text-sm font-semibold text-on-surface truncate">{name}</p>
                 <div className="flex items-center justify-between mt-2">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${cfg?.color}`}>
-                    {cfg?.icon} {cfg?.label}
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold flex items-center gap-1 ${cfg?.color}`}>
+                    <StatusIcon name={cfg?.icon ?? "clock"} size={10} />
+                    {cfg?.label}
                   </span>
                   <ChevronRight size={13} className="text-outline-variant group-hover:text-secondary transition" />
                 </div>
@@ -292,7 +298,11 @@ export default function DashboardPage() {
             </div>
           ) : filtered.length === 0 ? (
             <div className="bg-surface-container-lowest rounded-xl border border-dashed border-outline-variant p-12 text-center">
-              <div className="text-4xl mb-3">🔍</div>
+              <div className="flex justify-center mb-3">
+                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center">
+                  <Search size={22} className="text-slate-400" />
+                </div>
+              </div>
               <p className="font-display font-semibold text-on-surface text-base mb-1">No schemes found</p>
               <p className="text-sm text-on-surface-variant">
                 {categoryFilter

@@ -6,7 +6,8 @@ import { useAuth } from "@/lib/auth-context";
 import { schemes as schemesApi, Scheme } from "@/lib/api";
 import Navbar from "@/components/Navbar";
 import ApplyButton from "@/components/ApplyButton";
-import { CATEGORY_ICONS, cn } from "@/lib/utils";
+import CategoryIcon from "@/components/CategoryIcon";
+import { cn } from "@/lib/utils";
 import {
   ArrowLeft, CheckCircle2, FileText, Users,
   Globe, Tag, AlertCircle, Sparkles,
@@ -37,7 +38,7 @@ function SimplifiedContent({ text }: { text: string }) {
           const content = line.startsWith("•") ? line.slice(1).trim() : line;
           return (
             <li key={i} className="flex items-start gap-2 text-[13px] text-on-surface-variant leading-relaxed">
-              <span className="text-secondary mt-0.5 shrink-0">✓</span>
+              <CheckCircle2 size={14} className="text-secondary mt-0.5 shrink-0" />
               <span>{content}</span>
             </li>
           );
@@ -168,7 +169,6 @@ export default function SchemeDetailPage() {
 
   if (!scheme) return null;
 
-  const icon      = CATEGORY_ICONS[scheme.scheme_category] || "📋";
   const levelPill = LEVEL_PILL[scheme.level] || "bg-surface-container text-on-surface-variant";
 
   return (
@@ -216,8 +216,8 @@ export default function SchemeDetailPage() {
 
             {/* title row */}
             <div className="flex items-start gap-4 mb-5">
-              <div className="w-14 h-14 bg-surface-container-low rounded-2xl flex items-center justify-center text-3xl shrink-0 border border-outline-variant/40">
-                {icon}
+              <div className="w-14 h-14 bg-surface-container-low rounded-2xl flex items-center justify-center shrink-0 border border-outline-variant/40">
+                <CategoryIcon category={scheme.scheme_category} size={28} strokeWidth={1.6} className="text-secondary" />
               </div>
               <div className="min-w-0">
                 <h1 className="font-display text-xl md:text-2xl font-bold text-on-surface leading-tight mb-2">

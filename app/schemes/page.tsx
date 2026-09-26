@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const LEVELS    = ["Central", "State", "State-Central"];
+const LEVELS    = ["Central", "State"];
 const PAGE_SIZE = 18;
 type  Mode      = "browse" | "vector";
 
@@ -193,7 +193,7 @@ export default function SchemesPage() {
           {/* heading */}
           <div className="mb-6">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container border border-outline-variant/50 text-on-surface-variant text-xs font-semibold uppercase tracking-wider mb-3">
-              <span className="text-secondary">✦</span>
+              <Sparkles size={10} className="text-secondary" />
               Verified Central &amp; State Repository
             </div>
             <h1 className="font-display text-3xl md:text-4xl font-bold text-on-surface tracking-tight mb-2">
@@ -350,7 +350,14 @@ export default function SchemesPage() {
           </div>
         ) : totalSchemes === 0 ? (
           <div className="bg-surface-container-lowest rounded-xl border border-dashed border-outline-variant p-16 text-center">
-            <div className="text-5xl mb-4">{mode === "vector" ? "🔮" : "🔍"}</div>
+            <div className="flex justify-center mb-4">
+              <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center">
+                {mode === "vector"
+                  ? <Sparkles size={26} className="text-slate-400" />
+                  : <Search    size={26} className="text-slate-400" />
+                }
+              </div>
+            </div>
             <p className="font-display font-semibold text-on-surface text-xl mb-2">
               No schemes found
             </p>

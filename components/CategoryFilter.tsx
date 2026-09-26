@@ -1,14 +1,13 @@
 "use client";
 
-import Image from "next/image";
-import { DB_CATEGORIES, CATEGORY_ICON_PNG, CATEGORY_EMOJI, cn } from "@/lib/utils";
+import { DB_CATEGORIES, cn } from "@/lib/utils";
+import CategoryIcon from "@/components/CategoryIcon";
 
 interface Props {
   selected: string | null;
   onChange: (cat: string | null) => void;
 }
 
-// Short display labels for pills (avoid wrapping on narrow screens)
 const SHORT_LABEL: Record<string, string> = {
   "Agriculture,Rural & Environment":           "Agriculture",
   "Banking,Financial Services and Insurance":  "Banking & Finance",
@@ -44,10 +43,8 @@ export default function CategoryFilter({ selected, onChange }: Props) {
       </button>
 
       {DB_CATEGORIES.map((cat) => {
-        const pngSrc  = CATEGORY_ICON_PNG[cat];
-        const emoji   = CATEGORY_EMOJI[cat];
         const isActive = selected === cat;
-        const label   = SHORT_LABEL[cat] ?? cat;
+        const label    = SHORT_LABEL[cat] ?? cat;
 
         return (
           <button
@@ -60,20 +57,12 @@ export default function CategoryFilter({ selected, onChange }: Props) {
                 : "bg-white text-slate-700 border-slate-300 hover:border-slate-500 hover:text-slate-900 hover:bg-slate-50"
             )}
           >
-            {pngSrc ? (
-              <Image
-                src={pngSrc}
-                alt=""
-                width={14}
-                height={14}
-                className={cn(
-                  "object-contain shrink-0",
-                  isActive ? "brightness-0 invert" : "opacity-70"
-                )}
-              />
-            ) : (
-              <span className="text-[13px] leading-none">{emoji}</span>
-            )}
+            <CategoryIcon
+              category={cat}
+              size={13}
+              strokeWidth={2.2}
+              className="shrink-0"
+            />
             {label}
           </button>
         );
